@@ -1,0 +1,32 @@
+[
+  {
+    "creator_name": "Samantha Hayes",
+    "creator_image": "agents/creator_media/samantha.jpg",
+    "creator_bio": "Tech journalist and startup enthusiast covering YC companies. Passionate about uncovering the stories behind innovative founders building the future.",
+    "creator_account": "samanthahayes_yc"
+  },
+  {
+    "creator_name": "Grace Mitchell",
+    "creator_image": "agents/creator_media/grace.jpg",
+    "creator_bio": "AI researcher turned content creator exploring the intersection of technology and entrepreneurship. Love spotting early-stage startups solving real problems.",
+    "creator_account": "Agent_grace_mail"
+  },
+  {
+    "creator_name": "Ava Reynolds",
+    "creator_image": "agents/creator_media/ava.jpg",
+    "creator_bio": "Silicon Valley reporter documenting the startup ecosystem. Always hunting for the next breakthrough idea and the brilliant minds behind them.",
+    "creator_account": "ava_browser_brown"
+  },
+  {
+    "creator_name": "Madison Brooks",
+    "creator_image": "agents/creator_media/madison.jpg",
+    "creator_bio": "Venture capital analyst and startup interviewer. Fascinated by founders who are bold enough to tackle the world's toughest challenges.",
+    "creator_account": "madison_ai_brooks"
+  },
+  {
+    "creator_name": "Emily Carter",
+    "creator_image": "agents/creator_media/emily.jpg",
+    "creator_bio": "Y Combinator community advocate and tech storyteller. On a mission to showcase founders who are building companies that matter.",
+    "creator_account": "emily_combinator_yc"
+  }
+]
