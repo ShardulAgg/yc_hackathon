@@ -17,8 +17,6 @@ export function Nav() {
 
   const handleLogout = () => {
     if (typeof window !== "undefined") {
-      const sessionId = localStorage.getItem("sessionId");
-      // Note: logout mutation needs to be updated to work properly
       logout.mutate();
     }
   };

@@ -1,10 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { api } from "~/trpc/react";
+
+// Prevent static generation for this page
+export const dynamic = "force-dynamic";
 
 type TabType = "company" | "posts" | "creators";
 
@@ -221,8 +223,8 @@ export default function ProfilePage() {
       // Set the generated use case in the textarea
       const useCaseTextarea = document.querySelector(
         'textarea[name="useCase"]',
-      ) as HTMLTextAreaElement;
-      if (useCaseTextarea) {
+      );
+      if (useCaseTextarea instanceof HTMLTextAreaElement) {
         useCaseTextarea.value = data.useCase;
         useCaseTextarea.dispatchEvent(new Event("input", { bubbles: true }));
       }

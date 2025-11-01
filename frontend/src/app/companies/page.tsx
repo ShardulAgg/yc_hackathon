@@ -50,7 +50,7 @@ export default function CompaniesPage() {
         {/* Loading State */}
         {isLoading && (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[...Array(6)].map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div
                 key={i}
                 className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 animate-pulse"

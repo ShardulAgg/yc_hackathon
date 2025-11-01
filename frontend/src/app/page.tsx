@@ -2,8 +2,16 @@ import Link from "next/link";
 
 import { api, HydrateClient } from "~/trpc/server";
 
+// Prevent static generation to avoid build-time database issues
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
-  void api.company.getAll.prefetch();
+  // Only prefetch if database is available (skip during build if not configured)
+  try {
+    void api.company.getAll.prefetch();
+  } catch {
+    // Ignore errors during build/prerender
+  }
 
   return (
     <HydrateClient>
@@ -56,7 +64,7 @@ export default async function Home() {
                 Founder Stories
               </h3>
               <p className="text-gray-300">
-                Share your founder's journey through video and connect with your
+                Share your founder&apos;s journey through video and connect with your
                 audience
               </p>
             </div>

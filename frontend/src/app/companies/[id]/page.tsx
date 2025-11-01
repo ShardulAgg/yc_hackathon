@@ -104,7 +104,7 @@ export default function CompanyDetailPage() {
             {company.videoUrl && (
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
-                  <span>🎥</span> Founder's Story
+                  <span>🎥</span> Founder&apos;s Story
                 </h2>
                 <div className="relative aspect-video rounded-xl overflow-hidden bg-black/20 border border-white/10">
                   <iframe
