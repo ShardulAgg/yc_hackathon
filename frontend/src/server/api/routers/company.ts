@@ -245,6 +245,26 @@ export const companyRouter = createTRPCRouter({
         where: { id },
         data: updateData,
       });
+
+      // If company info changed, delete old video posts so they regenerate with new info
+      // Check if any relevant fields changed
+      const relevantFieldsChanged = 
+        (updateData.name !== undefined && updateData.name !== company.name) ||
+        (updateData.useCase !== undefined && updateData.useCase !== company.useCase) ||
+        (updateData.interestingFact !== undefined && updateData.interestingFact !== company.interestingFact) ||
+        (updateData.founderName !== undefined && updateData.founderName !== company.founderName) ||
+        (updateData.founderBio !== undefined && updateData.founderBio !== company.founderBio);
+
+      if (relevantFieldsChanged) {
+        // Delete all video posts for this company so they regenerate with updated info
+        await db.post.deleteMany({
+          where: {
+            companyId: id,
+            creatorId: { not: null }, // Only delete posts with creators (generated videos)
+          },
+        });
+      }
+
       return updatedCompany;
     }),
 

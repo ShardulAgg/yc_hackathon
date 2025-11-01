@@ -10,6 +10,7 @@ export const env = createEnv({
     NODE_ENV: z.enum(["development", "test", "production"]),
     DATABASE_URL: z.string(),
     PERPLEXITY_API_KEY: z.string().optional(),
+    VIDEO_AGENT_API_URL: z.string().url().optional(),
   },
 
   /**
@@ -29,6 +30,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     DATABASE_URL: process.env.DATABASE_URL,
     PERPLEXITY_API_KEY: process.env.PERPLEXITY_API_KEY,
+    VIDEO_AGENT_API_URL: process.env.VIDEO_AGENT_API_URL,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**
