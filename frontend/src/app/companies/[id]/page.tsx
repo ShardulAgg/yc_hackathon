@@ -2,16 +2,50 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useState } from "react";
 
 import { api } from "~/trpc/react";
 
 export default function CompanyDetailPage() {
   const params = useParams();
   const companyId = params?.id as string;
+  const [selectedCreatorId, setSelectedCreatorId] = useState<number | null>(null);
+  const [generatedVideoUrl, setGeneratedVideoUrl] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const { data: company, isLoading } = api.company.getById.useQuery({
     id: companyId,
   });
+
+  const { data: creators, isLoading: isLoadingCreators } = api.video.getCreators.useQuery();
+
+  const generateVideoMutation = api.video.generateVideo.useMutation({
+    onSuccess: (data) => {
+      setIsGenerating(false);
+      if (data.video_url) {
+        setGeneratedVideoUrl(data.video_url);
+      }
+    },
+    onError: (error) => {
+      setIsGenerating(false);
+      alert(`Failed to generate video: ${error.message}`);
+    },
+  });
+
+  const handleGenerateVideo = () => {
+    if (selectedCreatorId === null || !company) return;
+
+    setIsGenerating(true);
+    generateVideoMutation.mutate({
+      company_id: company.id,
+      company_name: company.name,
+      use_case: company.useCase || company.description,
+      founder_name: company.founderName || "Founder",
+      founder_role: "Founder", // Default role since not stored in DB
+      interesting_context: company.interestingFact || "",
+      creator_id: selectedCreatorId!,
+    });
+  };
 
   if (isLoading) {
     return (
@@ -112,7 +146,107 @@ export default function CompanyDetailPage() {
               </div>
             )}
 
-            {/* Video Section */}
+            {/* Video Generation Section */}
+            <div className="mb-8">
+              <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">
+                <span>🎬</span> Generate Founder Video
+              </h2>
+              
+              {/* Creator Selection */}
+              {isLoadingCreators ? (
+                <div className="p-6 bg-white/5 rounded-xl border border-white/10">
+                  <div className="animate-pulse">
+                    <div className="h-4 bg-white/10 rounded w-32 mb-4"></div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="h-24 bg-white/10 rounded-lg"></div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ) : creators && creators.length > 0 ? (
+                <div className="mb-6">
+                  <p className="text-gray-300 mb-4">
+                    Select a creator to generate a personalized founder video:
+                  </p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
+                    {creators.map((creator) => (
+                      <button
+                        key={creator.id}
+                        onClick={() => setSelectedCreatorId(creator.id)}
+                        className={`p-4 rounded-xl border transition-all ${
+                          selectedCreatorId === creator.id
+                            ? "bg-purple-600/30 border-purple-500 ring-2 ring-purple-500"
+                            : "bg-white/5 border-white/10 hover:border-purple-500/50"
+                        }`}
+                      >
+                        <div className="flex flex-col items-center text-center">
+                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 mb-2 flex items-center justify-center text-white text-xl font-bold">
+                            {creator.name.charAt(0)}
+                          </div>
+                          <p className="text-white text-sm font-semibold">{creator.name}</p>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                  
+                  {/* Generate Button */}
+                  <button
+                    onClick={handleGenerateVideo}
+                    disabled={selectedCreatorId === null || isGenerating}
+                    className={`w-full px-6 py-3 rounded-xl font-semibold transition-all ${
+                      selectedCreatorId === null || isGenerating
+                        ? "bg-gray-600/50 text-gray-400 cursor-not-allowed"
+                        : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transform hover:-translate-y-1"
+                    }`}
+                  >
+                    {isGenerating ? (
+                      <span className="flex items-center justify-center gap-2">
+                        <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Generating Video...
+                      </span>
+                    ) : (
+                      "Generate Video with Selected Creator"
+                    )}
+                  </button>
+                </div>
+              ) : (
+                <div className="p-6 bg-white/5 rounded-xl border border-white/10 text-center">
+                  <p className="text-gray-400">No creators available</p>
+                </div>
+              )}
+
+              {/* Generated Video Display */}
+              {generatedVideoUrl && (
+                <div className="mt-6">
+                  <h3 className="text-xl font-bold text-white mb-4">Generated Video</h3>
+                  <div className="relative aspect-video rounded-xl overflow-hidden bg-black/20 border border-white/10">
+                    {generatedVideoUrl.startsWith("http") ? (
+                      <iframe
+                        src={generatedVideoUrl}
+                        title={`${company.name} Generated Video`}
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        className="w-full h-full"
+                      />
+                    ) : (
+                      <video
+                        src={generatedVideoUrl}
+                        controls
+                        className="w-full h-full"
+                      >
+                        Your browser does not support the video tag.
+                      </video>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Original Video Section */}
             {company.videoUrl && (
               <div className="mb-8">
                 <h2 className="text-2xl font-bold text-white mb-4 flex items-center gap-2">

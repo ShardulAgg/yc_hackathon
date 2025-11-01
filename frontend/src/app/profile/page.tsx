@@ -159,6 +159,15 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabType>("company");
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
 
+  // Fetch creators from database
+  const { data: dbCreators, isLoading: isLoadingCreators } = api.creator.getAll.useQuery();
+  
+  // Fetch generated videos for selected creator
+  const { data: creatorVideos, isLoading: isLoadingVideos } = api.video.getVideosByCreator.useQuery(
+    { creatorId: selectedCreator ?? "" },
+    { enabled: !!selectedCreator }
+  );
+
   const utils = api.useUtils();
   const { data: user, isLoading: userLoading } = api.auth.me.useQuery();
   const { data: company } = api.company.getByUserId.useQuery(
@@ -701,48 +710,62 @@ export default function ProfilePage() {
                     </p>
 
                     {/* Creators Grid */}
-                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {fakeCreators.map((creator) => (
-                        <div
-                          key={creator.id}
-                          className="p-6 rounded-xl border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
-                          onClick={() => setSelectedCreator(creator.id)}
-                        >
-                          {/* Avatar */}
-                          <div className="flex justify-center mb-4">
-                            <img
-                              src={creator.photoUrl}
-                              alt={creator.name}
-                              className="w-24 h-24 rounded-full border-4 border-white/20"
-                            />
+                    {isLoadingCreators ? (
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {Array.from({ length: 5 }).map((_, i) => (
+                          <div key={i} className="p-6 rounded-xl border border-white/10 bg-white/5 animate-pulse">
+                            <div className="w-24 h-24 rounded-full bg-white/10 mx-auto mb-4"></div>
+                            <div className="h-4 bg-white/10 rounded w-3/4 mx-auto mb-2"></div>
+                            <div className="h-3 bg-white/10 rounded w-1/2 mx-auto mb-2"></div>
+                            <div className="h-3 bg-white/10 rounded w-full"></div>
                           </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {(dbCreators ?? fakeCreators).map((creator) => (
+                          <div
+                            key={creator.id}
+                            className="p-6 rounded-xl border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
+                            onClick={() => setSelectedCreator(creator.id)}
+                          >
+                            {/* Avatar */}
+                            <div className="flex justify-center mb-4">
+                              <img
+                                src={creator.photoUrl}
+                                alt={creator.name}
+                                className="w-24 h-24 rounded-full border-4 border-white/20"
+                              />
+                            </div>
 
-                          {/* Info */}
-                          <h3 className="text-xl font-bold text-white text-center mb-2">
-                            {creator.name}
-                          </h3>
-                          <p className="text-sm text-purple-400 text-center mb-2">
-                            <a
-                              href={`https://instagram.com/${creator.platform}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="hover:text-purple-300 transition-colors"
-                              onClick={(e) => e.stopPropagation()}
-                            >
-                              @{creator.platform}
-                            </a> • {creator.followers} followers
-                          </p>
-                          <p className="text-gray-300 text-sm text-center line-clamp-3">
-                            {creator.bio}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
+                            {/* Info */}
+                            <h3 className="text-xl font-bold text-white text-center mb-2">
+                              {creator.name}
+                            </h3>
+                            <p className="text-sm text-purple-400 text-center mb-2">
+                              <a
+                                href={`https://instagram.com/${creator.platform}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hover:text-purple-300 transition-colors"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                @{creator.platform}
+                              </a> • {creator.followers} followers
+                            </p>
+                            <p className="text-gray-300 text-sm text-center line-clamp-3">
+                              {creator.bio}
+                            </p>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   // Creator Detail View
                   (() => {
-                    const creator = fakeCreators.find((c) => c.id === selectedCreator);
+                    const creators = dbCreators ?? fakeCreators;
+                    const creator = creators.find((c) => c.id === selectedCreator);
                     if (!creator) return null;
 
                     return (
@@ -797,68 +820,154 @@ export default function ProfilePage() {
                           </p>
                         </div>
 
-                        {/* Demo Content Panel */}
+                        {/* Generated Videos Panel */}
                         <div className="lg:w-2/3 bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-                          <h2 className="text-2xl font-bold text-white mb-6">Demo Content</h2>
+                          <h2 className="text-2xl font-bold text-white mb-6">Generated Videos</h2>
                           <p className="text-gray-300 mb-8">
-                            Sample videos and content this creator could produce for your company
+                            Videos generated by this creator for various companies
                           </p>
 
-                          {/* Demo Grid */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            {creator.demos.map((demo) => (
-                              <div
-                                key={demo.id}
-                                className="rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
-                              >
-                                <div className="relative">
-                                  {/* Thumbnail/Image */}
-                                  <img
-                                    src={demo.thumbnail}
-                                    alt={demo.title}
-                                    className="w-full h-auto"
-                                  />
-                                  {/* Video/Image Badge */}
-                                  <div className="absolute top-4 right-4">
-                                    {demo.type === "video" ? (
-                                      <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="currentColor"
-                                          viewBox="0 0 20 20"
-                                        >
-                                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                        </svg>
-                                        Video
-                                      </div>
-                                    ) : (
-                                      <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                                        <svg
-                                          className="w-4 h-4"
-                                          fill="none"
-                                          stroke="currentColor"
-                                          viewBox="0 0 24 24"
-                                        >
-                                          <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={2}
-                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                          />
-                                        </svg>
-                                        Image
-                                      </div>
-                                    )}
+                          {isLoadingVideos ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-pulse">
+                                  <div className="w-full h-48 bg-white/10"></div>
+                                  <div className="p-4">
+                                    <div className="h-4 bg-white/10 rounded w-3/4 mb-2"></div>
+                                    <div className="h-3 bg-white/10 rounded w-1/2"></div>
                                   </div>
                                 </div>
-                                <div className="p-4">
-                                  <h3 className="text-lg font-semibold text-white">
-                                    {demo.title}
-                                  </h3>
+                              ))}
+                            </div>
+                          ) : creatorVideos && creatorVideos.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              {creatorVideos.map((post) => (
+                                <div
+                                  key={post.id}
+                                  className="rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all"
+                                >
+                                  {post.videos && post.videos.length > 0 ? (
+                                    <div className="relative">
+                                      {post.videos[0]!.url === "placeholder.mp4" || post.videos[0]!.url.includes("placeholder.mp4") ? (
+                                        <div className="relative aspect-video bg-gradient-to-br from-purple-900/50 to-pink-900/50 flex items-center justify-center border border-white/10">
+                                          <div className="text-center">
+                                            <svg
+                                              className="w-16 h-16 mx-auto mb-4 text-purple-400"
+                                              fill="none"
+                                              stroke="currentColor"
+                                              viewBox="0 0 24 24"
+                                            >
+                                              <path
+                                                strokeLinecap="round"
+                                                strokeLinejoin="round"
+                                                strokeWidth={2}
+                                                d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                              />
+                                            </svg>
+                                            <p className="text-white font-semibold">Video Processing</p>
+                                            <p className="text-gray-400 text-sm mt-1">This video is being generated</p>
+                                          </div>
+                                        </div>
+                                      ) : post.videos[0]!.url.endsWith(".mp4") || post.videos[0]!.url.includes(".mp4") ? (
+                                        <video
+                                          src={post.videos[0]!.url}
+                                          controls
+                                          className="w-full h-full"
+                                          style={{ maxHeight: "400px" }}
+                                        >
+                                          Your browser does not support the video tag.
+                                        </video>
+                                      ) : post.videos[0]!.url.startsWith("http") && (post.videos[0]!.url.includes("youtube") || post.videos[0]!.url.includes("youtu.be") || post.videos[0]!.url.includes("vimeo")) ? (
+                                        <div className="relative aspect-video bg-black/20">
+                                          <iframe
+                                            src={post.videos[0]!.url}
+                                            title={post.title}
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowFullScreen
+                                            className="w-full h-full"
+                                          />
+                                        </div>
+                                      ) : (
+                                        <video
+                                          src={post.videos[0]!.url}
+                                          controls
+                                          className="w-full h-auto"
+                                          style={{ maxHeight: "400px" }}
+                                        >
+                                          Your browser does not support the video tag.
+                                        </video>
+                                      )}
+                                      <div className="absolute top-4 right-4">
+                                        <div className={`text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1 ${
+                                          post.videos[0]!.url === "placeholder.mp4" ? "bg-yellow-500" : "bg-red-500"
+                                        }`}>
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="currentColor"
+                                            viewBox="0 0 20 20"
+                                          >
+                                            <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                          </svg>
+                                          {post.videos[0]!.url === "placeholder.mp4" ? "Processing" : "Video"}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : post.images && post.images.length > 0 ? (
+                                    <div className="relative">
+                                      <img
+                                        src={post.images[0]!.url}
+                                        alt={post.title}
+                                        className="w-full h-auto"
+                                      />
+                                      <div className="absolute top-4 right-4">
+                                        <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                          <svg
+                                            className="w-4 h-4"
+                                            fill="none"
+                                            stroke="currentColor"
+                                            viewBox="0 0 24 24"
+                                          >
+                                            <path
+                                              strokeLinecap="round"
+                                              strokeLinejoin="round"
+                                              strokeWidth={2}
+                                              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                            />
+                                          </svg>
+                                          Image
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ) : null}
+                                  <div className="p-4">
+                                    <h3 className="text-lg font-semibold text-white mb-2">
+                                      {post.title}
+                                    </h3>
+                                    {post.description && (
+                                      <p className="text-gray-300 text-sm mb-2 line-clamp-2">
+                                        {post.description}
+                                      </p>
+                                    )}
+                                    {post.company && (
+                                      <p className="text-purple-400 text-xs">
+                                        For: {post.company.name}
+                                      </p>
+                                    )}
+                                    <p className="text-gray-500 text-xs mt-2">
+                                      {new Date(post.createdAt).toLocaleDateString()}
+                                    </p>
+                                  </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
+                              ))}
+                            </div>
+                          ) : (
+                            <div className="text-center py-12">
+                              <p className="text-gray-400 mb-2">No videos generated yet</p>
+                              <p className="text-sm text-gray-500">
+                                Videos created by this creator will appear here
+                              </p>
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
