@@ -499,5 +499,56 @@ export const videoRouter = createTRPCRouter({
       });
     }
   }),
+
+  uploadVideo: protectedProcedure
+    .input(
+      z.object({
+        video_path: z.string().min(1),
+        title: z.string().min(1),
+        description: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const response = await fetch(`${VIDEO_AGENT_API_URL}/api/upload-video`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            video_path: input.video_path,
+            title: input.title,
+            description: input.description,
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message:
+              errorData.detail ||
+              errorData.message ||
+              `Failed to upload video: ${response.statusText}`,
+          });
+        }
+
+        const result = (await response.json()) as {
+          message: string;
+          success: boolean;
+        };
+
+        return result;
+      } catch (error) {
+        if (error instanceof TRPCError) {
+          throw error;
+        }
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message:
+            error instanceof Error ? error.message : "Failed to upload video",
+        });
+      }
+    }),
 });
 

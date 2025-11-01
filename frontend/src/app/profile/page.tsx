@@ -159,6 +159,7 @@ export default function ProfilePage() {
   const [activeTab, setActiveTab] = useState<TabType>("company");
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
   const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
+  const [uploadingVideoIds, setUploadingVideoIds] = useState<Set<string>>(new Set());
 
   // Fetch creators from database
   const { data: dbCreators, isLoading: isLoadingCreators } = api.creator.getAll.useQuery();
@@ -245,6 +246,16 @@ export default function ProfilePage() {
     },
   });
 
+  const uploadVideo = api.video.uploadVideo.useMutation({
+    onSuccess: (data) => {
+      alert(`Video uploaded successfully! ${data.message}`);
+      void utils.post.getByUserId.invalidate();
+    },
+    onError: (error) => {
+      alert(`Error uploading video: ${error.message}`);
+    },
+  });
+
   const handleGenerateVideo = () => {
     if (!selectedCreator || !company) {
       alert("Please select a creator and ensure you have company information saved!");
@@ -277,6 +288,43 @@ export default function ProfilePage() {
       interesting_context: company.interestingFact || "",
       creator_id: creatorAgentId,
     });
+  };
+
+  const handleUploadVideo = (post: {
+    id: string;
+    title: string;
+    description: string | null;
+    videos: Array<{ url: string }>;
+  }) => {
+    if (!post.videos || post.videos.length === 0) {
+      alert("No video to upload!");
+      return;
+    }
+
+    const videoUrl = post.videos[0]!.url;
+    
+    // Check if it's a placeholder or not ready
+    if (videoUrl === "placeholder.mp4" || videoUrl.includes("placeholder.mp4")) {
+      alert("Video is still processing. Please wait for it to complete.");
+      return;
+    }
+
+    setUploadingVideoIds((prev) => new Set(prev).add(post.id));
+    
+    uploadVideo.mutate({
+      video_path: videoUrl,
+      title: post.title,
+      description: post.description || "",
+    });
+    
+    // Remove uploading state after a delay as fallback
+    setTimeout(() => {
+      setUploadingVideoIds((prev) => {
+        const next = new Set(prev);
+        next.delete(post.id);
+        return next;
+      });
+    }, 10000);
   };
 
   // Show loading state while checking authentication
@@ -909,7 +957,7 @@ export default function ProfilePage() {
                           </p>
 
                           {isLoadingVideos ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
                               {Array.from({ length: 4 }).map((_, i) => (
                                 <div key={i} className="rounded-xl overflow-hidden border border-white/10 bg-white/5 animate-pulse">
                                   <div className="w-full h-48 bg-white/10"></div>
@@ -921,8 +969,8 @@ export default function ProfilePage() {
                               ))}
                             </div>
                           ) : creatorVideos && creatorVideos.length > 0 ? (
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                              {creatorVideos.map((post) => (
+                            <div className={`grid grid-cols-1 ${creatorVideos.length === 1 ? 'md:grid-cols-1 lg:grid-cols-1' : 'md:grid-cols-2 lg:grid-cols-2'} gap-6`}>
+                              {creatorVideos.slice(0, 4).map((post) => (
                                 <div
                                   key={post.id}
                                   className="rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all"
@@ -1030,10 +1078,36 @@ export default function ProfilePage() {
                                       </p>
                                     )}
                                     {post.company && (
-                                      <p className="text-purple-400 text-xs">
+                                      <p className="text-purple-400 text-xs mb-3">
                                         For: {post.company.name}
                                       </p>
                                     )}
+                                    <button
+                                      onClick={() => handleUploadVideo(post)}
+                                      disabled={uploadingVideoIds.has(post.id)}
+                                      className={`w-full mt-3 px-4 py-2 rounded-lg font-semibold transition-all flex items-center justify-center gap-2 ${
+                                        uploadingVideoIds.has(post.id)
+                                          ? "bg-gray-600/50 text-gray-400 cursor-not-allowed"
+                                          : "bg-gradient-to-r from-blue-600 to-cyan-600 text-white hover:from-blue-700 hover:to-cyan-700"
+                                      }`}
+                                    >
+                                      {uploadingVideoIds.has(post.id) ? (
+                                        <>
+                                          <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                          </svg>
+                                          Uploading...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                          </svg>
+                                          Upload to Instagram
+                                        </>
+                                      )}
+                                    </button>
                                     <p className="text-gray-500 text-xs mt-2">
                                       {new Date(post.createdAt).toLocaleDateString()}
                                     </p>
