@@ -10,15 +10,15 @@ export const dynamic = "force-dynamic";
 
 type TabType = "company" | "posts" | "creators";
 
-// Fake creators data with demo content
+// Creators data from video_agent
 const fakeCreators = [
   {
     id: "1",
-    name: "Alex Rivera",
-    bio: "Tech content creator sharing the latest SaaS trends and startup stories. Former founder turned educator.",
-    photoUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=AlexRivera",
-    platform: "YouTube",
-    followers: "250K",
+    name: "Samantha Hayes",
+    bio: "Tech journalist and startup enthusiast covering YC companies. Passionate about uncovering the stories behind innovative founders building the future.",
+    photoUrl: "/creator_media/samantha.jpg",
+    platform: "samanthahayes_yc",
+    followers: "125K",
     demos: [
       {
         id: "1",
@@ -42,11 +42,11 @@ const fakeCreators = [
   },
   {
     id: "2",
-    name: "Jordan Kim",
-    bio: "Instagram tech influencer specializing in productivity tools and B2B software reviews.",
-    photoUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=JordanKim",
-    platform: "Instagram",
-    followers: "180K",
+    name: "Grace Mitchell",
+    bio: "AI researcher turned content creator exploring the intersection of technology and entrepreneurship. Love spotting early-stage startups solving real problems.",
+    photoUrl: "/creator_media/grace.jpg",
+    platform: "Agent_grace_mail",
+    followers: "98K",
     demos: [
       {
         id: "1",
@@ -70,11 +70,11 @@ const fakeCreators = [
   },
   {
     id: "3",
-    name: "Taylor Chen",
-    bio: "TikTok viral creator making complex tech topics accessible. Reaching Gen Z entrepreneurs.",
-    photoUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=TaylorChen",
-    platform: "TikTok",
-    followers: "500K",
+    name: "Ava Reynolds",
+    bio: "Silicon Valley reporter documenting the startup ecosystem. Always hunting for the next breakthrough idea and the brilliant minds behind them.",
+    photoUrl: "/creator_media/ava.jpg",
+    platform: "ava_browser_brown",
+    followers: "210K",
     demos: [
       {
         id: "1",
@@ -98,11 +98,11 @@ const fakeCreators = [
   },
   {
     id: "4",
-    name: "Morgan Lee",
-    bio: "LinkedIn thought leader in SaaS marketing. Connecting founders with their ideal customers.",
-    photoUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=MorganLee",
-    platform: "LinkedIn",
-    followers: "95K",
+    name: "Madison Brooks",
+    bio: "Venture capital analyst and startup interviewer. Fascinated by founders who are bold enough to tackle the world's toughest challenges.",
+    photoUrl: "/creator_media/madison.jpg",
+    platform: "madison_ai_brooks",
+    followers: "156K",
     demos: [
       {
         id: "1",
@@ -126,11 +126,11 @@ const fakeCreators = [
   },
   {
     id: "5",
-    name: "Casey Brooks",
-    bio: "YouTube long-form content creator focused on founder interviews and product deep dives.",
-    photoUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=CaseyBrooks",
-    platform: "YouTube",
-    followers: "150K",
+    name: "Emily Carter",
+    bio: "Y Combinator community advocate and tech storyteller. On a mission to showcase founders who are building companies that matter.",
+    photoUrl: "/creator_media/emily.jpg",
+    platform: "emily_combinator_yc",
+    followers: "187K",
     demos: [
       {
         id: "1",
@@ -149,34 +149,6 @@ const fakeCreators = [
         type: "video" as const,
         thumbnail: "https://placehold.co/1280x720/B91C1C/B91C1C?text=Comparison+Video",
         title: "Competitor Comparison",
-      },
-    ],
-  },
-  {
-    id: "6",
-    name: "Sam Park",
-    bio: "Multi-platform creator covering software reviews, startup journeys, and tech industry insights.",
-    photoUrl: "https://api.dicebear.com/7.x/avataaars/svg?seed=SamPark",
-    platform: "Instagram",
-    followers: "320K",
-    demos: [
-      {
-        id: "1",
-        type: "video" as const,
-        thumbnail: "https://placehold.co/640x640/A855F7/A855F7?text=IGTV+Content",
-        title: "Long-form IGTV Episode",
-      },
-      {
-        id: "2",
-        type: "image" as const,
-        thumbnail: "https://placehold.co/640x640/9333EA/9333EA?text=Stories",
-        title: "Interactive Stories Series",
-      },
-      {
-        id: "3",
-        type: "video" as const,
-        thumbnail: "https://placehold.co/640x640/7C3AED/7C3AED?text=Highlight",
-        title: "Best Practices Highlight",
       },
     ],
   },
