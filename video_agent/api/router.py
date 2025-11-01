@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import List
 import json
 from pathlib import Path
-from utils.video_upload import push_content
+from upload_post import UploadPostClient
 
 router = APIRouter()
 
