@@ -9,7 +9,7 @@ export const env = createEnv({
   server: {
     NODE_ENV: z.enum(["development", "test", "production"]),
     DATABASE_URL: z.string(),
-    PERPLEXITY_API_KEY: z.string().optional(),
+    PERPLEXITY_API_KEY: z.string(),
   },
 
   /**
