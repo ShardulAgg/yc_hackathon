@@ -4,67 +4,71 @@ from pathlib import Path
 from typing import Dict, List
 
 
-# Voice mappings - using ElevenLabs v3 supported voices
-INTERVIEWER_VOICE = "Aria"  # Female voice for interviewer
-INTERVIEWEE_VOICE = "Grimblewood"  # Male voice for interviewee
+# Image paths for creator and interviewee (relative to project root)
+CREATOR_IMAGE_PATH = Path(__file__).parent / "creators_media" / "creator.png"
+INTERVIEWEE_IMAGE_PATH = Path(__file__).parent / "interviewee_media" / "interviewee.png"
 
 
-def generate_audio_for_dialogue(speaker: str, text: str, is_interviewer: bool, output_dir: Path, index: int) -> str:
+def generate_video_for_dialogue(speaker: str, text: str, is_interviewer: bool, output_dir: Path, index: int) -> str:
     """
-    Generate audio for a single dialogue line using ElevenLabs v3
+    Generate video for a single dialogue line using Veo-3.1-fast
 
     Args:
         speaker: Speaker name
         text: Dialogue text
         is_interviewer: True if speaker is interviewer, False if interviewee
-        output_dir: Directory to save audio files
+        output_dir: Directory to save video files
         index: Index of the dialogue line
 
     Returns:
-        Path to generated audio file
+        URL to generated video file
     """
-    voice = INTERVIEWER_VOICE if is_interviewer else INTERVIEWEE_VOICE
+    # Select image based on speaker
+    image_path = CREATOR_IMAGE_PATH if is_interviewer else INTERVIEWEE_IMAGE_PATH
 
-    output = replicate.run(
-        "elevenlabs/v3",
-        input={
-            "voice": voice,
-            "prompt": text
-        }
-    )
+    # Create prompt
+    prompt = f'Speaker is saying "{text}"'
 
-    # Create filename
-    filename = f"{index:02d}_{speaker.replace(' ', '_')}_{voice}.mp3"
-    file_path = output_dir / filename
+    print(f"  Image: {image_path}")
+    print(f"  Prompt: {prompt[:80]}...")
 
-    # Write audio to file
-    with open(file_path, "wb") as file:
-        file.write(output.read())
+    # Open image file for Replicate
+    with open(image_path, "rb") as image_file:
+        # Generate video with Veo-3.1-fast
+        output = replicate.run(
+            "google/veo-3.1-fast",
+            input={
+                "image": image_file,
+                "prompt": prompt,
+                "resolution": "720p"
+            }
+        )
 
-    return str(file_path)
+    # Veo returns a URL string directly
+    return output
 
 
 def run_production(pre_production_output: Dict) -> Dict:
     """
-    Main production function to generate audio from script
+    Main production function to generate videos from script
 
     Args:
         pre_production_output: Output from pre_production containing script, creator, interviewee
 
     Returns:
-        Dict with audio files, script, and metadata
+        Dict with video files, script, and metadata
     """
     script = pre_production_output["script"]
     creator = pre_production_output["creator"]
     interviewee = pre_production_output["interviewee"]
 
-    # Create output directory for audio files
-    output_dir = Path(__file__).parent.parent / "output" / "audio"
+    # Create output directory for videos
+    output_dir = Path(__file__).parent.parent / "output" / "videos"
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    audio_files = []
+    video_files = []
 
-    # Generate audio for each dialogue line
+    # Generate video for each dialogue line
     for idx, dialogue in enumerate(script):
         speaker = dialogue["speaker"]
         text = dialogue["text"]
@@ -72,9 +76,10 @@ def run_production(pre_production_output: Dict) -> Dict:
         # Check if this is the interviewer or interviewee
         is_interviewer = speaker == creator["creator_name"]
 
-        print(f"Generating audio for {speaker} ({INTERVIEWER_VOICE if is_interviewer else INTERVIEWEE_VOICE}): {text[:50]}...")
+        print(f"\nGenerating video {idx + 1}/{len(script)} for {speaker}:")
+        print(f"  Text: {text[:80]}...")
 
-        audio_path = generate_audio_for_dialogue(
+        video_url = generate_video_for_dialogue(
             speaker=speaker,
             text=text,
             is_interviewer=is_interviewer,
@@ -82,18 +87,17 @@ def run_production(pre_production_output: Dict) -> Dict:
             index=idx
         )
 
-        audio_files.append({
+        video_files.append({
             "index": idx,
             "speaker": speaker,
-            "voice": INTERVIEWER_VOICE if is_interviewer else INTERVIEWEE_VOICE,
             "text": text,
-            "audio_path": audio_path
+            "video_url": video_url
         })
 
-        print(f"✓ Audio saved to: {audio_path}")
+        print(f"✓ Video generated: {video_url}")
 
     return {
-        "audio_files": audio_files,
+        "video_files": video_files,
         "script": script,
         "creator": creator,
         "interviewee": interviewee,

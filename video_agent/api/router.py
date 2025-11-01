@@ -3,7 +3,12 @@ from pydantic import BaseModel
 from typing import List
 import json
 from pathlib import Path
-from upload_post import UploadPostClient
+import sys
+sys.path.append(str(Path(__file__).parent.parent))
+
+from agents.pre_production import run_pre_production
+from agents.production import run_production
+from agents.post_production import run_post_production
 
 router = APIRouter()
 
@@ -41,26 +46,52 @@ def load_creators():
 async def generate_video(request: GenerateRequest):
     """
     Generate a video from interviewee context and creator
+    Full pipeline: script generation → video generation → stitching → base64 encoding
     """
-    # Validate creator_id
-    creators = load_creators()
-    if request.creator_id < 0 or request.creator_id >= len(creators):
-        raise HTTPException(status_code=400, detail=f"Invalid creator_id. Must be between 0 and {len(creators)-1}")
+    try:
+        # Validate creator_id
+        creators = load_creators()
+        if request.creator_id < 0 or request.creator_id >= len(creators):
+            raise HTTPException(status_code=400, detail=f"Invalid creator_id. Must be between 0 and {len(creators)-1}")
 
-    # For now, return placeholder response
-    return {
-        "message": "Video generation initiated",
-        "status": "processing",
-        "input": {
+        # Prepare context
+        interviewee_context = {
             "company_name": request.company_name,
             "use_case": request.use_case,
             "founder_name": request.founder_name,
             "founder_role": request.founder_role,
-            "interesting_context": request.interesting_context,
-            "creator_id": request.creator_id
-        },
-        "video_url": "placeholder.mp4"
-    }
+            "interesting_context": request.interesting_context
+        }
+
+        # Step 1: Pre-production (script generation)
+        print("\n" + "="*60)
+        print("STEP 1: PRE-PRODUCTION")
+        print("="*60)
+        pre_production_result = run_pre_production(interviewee_context, creator_index=request.creator_id)
+
+        # Step 2: Production (video generation)
+        print("\n" + "="*60)
+        print("STEP 2: PRODUCTION")
+        print("="*60)
+        production_result = run_production(pre_production_result)
+
+        # Step 3: Post-production (download, stitch, encode)
+        post_production_result = run_post_production(production_result)
+
+        return {
+            "status": "success",
+            "video_base64": post_production_result["video_base64"],
+            "video_path": post_production_result["video_path"],
+            "num_clips": post_production_result["num_clips"],
+            "script": post_production_result["script"],
+            "creator": post_production_result["creator"],
+            "interviewee": post_production_result["interviewee"]
+        }
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
 
 
 @router.get("/creators", response_model=List[CreatorResponse])
