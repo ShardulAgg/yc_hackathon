@@ -12,6 +12,7 @@ services:
       - .:/app
     environment:
       - ENVIRONMENT=development
+      - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
