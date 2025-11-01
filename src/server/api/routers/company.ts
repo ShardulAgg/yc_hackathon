@@ -33,16 +33,25 @@ export const companyRouter = createTRPCRouter({
         name: z.string().min(1),
         description: z.string().min(1),
         websiteUrl: z.string().url(),
-        logoUrl: z.string().url().optional(),
-        videoUrl: z.string().url().optional(),
-        founderName: z.string().optional(),
-        founderBio: z.string().optional(),
+        logoUrl: z.union([z.string().url(), z.literal("")]).optional(),
+        videoUrl: z.union([z.string().url(), z.literal("")]).optional(),
+        founderName: z.union([z.string(), z.literal("")]).optional(),
+        founderBio: z.union([z.string(), z.literal("")]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      // Clean up empty strings
+      const cleanedInput = {
+        ...input,
+        logoUrl: input.logoUrl === "" ? undefined : input.logoUrl,
+        videoUrl: input.videoUrl === "" ? undefined : input.videoUrl,
+        founderName: input.founderName === "" ? undefined : input.founderName,
+        founderBio: input.founderBio === "" ? undefined : input.founderBio,
+      };
+      
       const company = await db.company.create({
         data: {
-          ...input,
+          ...cleanedInput,
           userId: ctx.userId,
         },
       });
@@ -56,10 +65,10 @@ export const companyRouter = createTRPCRouter({
         name: z.string().min(1).optional(),
         description: z.string().min(1).optional(),
         websiteUrl: z.string().url().optional(),
-        logoUrl: z.string().url().optional(),
-        videoUrl: z.string().url().optional(),
-        founderName: z.string().optional(),
-        founderBio: z.string().optional(),
+        logoUrl: z.union([z.string().url(), z.literal("")]).optional(),
+        videoUrl: z.union([z.string().url(), z.literal("")]).optional(),
+        founderName: z.union([z.string(), z.literal("")]).optional(),
+        founderBio: z.union([z.string(), z.literal("")]).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -72,10 +81,24 @@ export const companyRouter = createTRPCRouter({
         throw new Error("Unauthorized");
       }
       
-      const { id, ...data } = input;
+      // Clean up empty strings
+      const { id, ...rest } = input;
+      const cleanedData = {
+        ...rest,
+        logoUrl: rest.logoUrl === "" ? undefined : rest.logoUrl,
+        videoUrl: rest.videoUrl === "" ? undefined : rest.videoUrl,
+        founderName: rest.founderName === "" ? undefined : rest.founderName,
+        founderBio: rest.founderBio === "" ? undefined : rest.founderBio,
+      };
+      
+      // Remove undefined fields
+      const updateData = Object.fromEntries(
+        Object.entries(cleanedData).filter(([_, v]) => v !== undefined)
+      );
+      
       const updatedCompany = await db.company.update({
         where: { id },
-        data,
+        data: updateData,
       });
       return updatedCompany;
     }),

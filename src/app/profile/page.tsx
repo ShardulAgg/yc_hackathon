@@ -186,6 +186,7 @@ export default function ProfilePage() {
   const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
 
+  const utils = api.useUtils();
   const { data: user } = api.auth.me.useQuery();
   const { data: company } = api.company.getByUserId.useQuery(
     undefined,
@@ -198,7 +199,7 @@ export default function ProfilePage() {
 
   const createCompany = api.company.create.useMutation({
     onSuccess: () => {
-      void api.company.getByUserId.invalidate();
+      void utils.company.getByUserId.invalidate();
       alert("Company information saved!");
     },
     onError: (error) => {
@@ -208,7 +209,7 @@ export default function ProfilePage() {
 
   const updateCompany = api.company.update.useMutation({
     onSuccess: () => {
-      void api.company.getByUserId.invalidate();
+      void utils.company.getByUserId.invalidate();
       alert("Company information updated!");
     },
     onError: (error) => {
@@ -218,7 +219,7 @@ export default function ProfilePage() {
 
   const createPost = api.post.create.useMutation({
     onSuccess: () => {
-      void api.post.getByUserId.invalidate();
+      void utils.post.getByUserId.invalidate();
       setIsCreatingPost(false);
       alert("Post created!");
     },
@@ -237,6 +238,12 @@ export default function ProfilePage() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
+    // Helper function to convert empty strings to undefined
+    const getValue = (key: string): string | undefined => {
+      const value = formData.get(key) as string;
+      return value && value.trim() !== "" ? value.trim() : undefined;
+    };
+    
     if (company) {
       // Update existing company
       updateCompany.mutate({
@@ -244,10 +251,10 @@ export default function ProfilePage() {
         name: formData.get("name") as string,
         description: formData.get("description") as string,
         websiteUrl: formData.get("websiteUrl") as string,
-        logoUrl: (formData.get("logoUrl") as string) || undefined,
-        videoUrl: (formData.get("videoUrl") as string) || undefined,
-        founderName: (formData.get("founderName") as string) || undefined,
-        founderBio: (formData.get("founderBio") as string) || undefined,
+        logoUrl: getValue("logoUrl"),
+        videoUrl: getValue("videoUrl"),
+        founderName: getValue("founderName"),
+        founderBio: getValue("founderBio"),
       });
     } else {
       // Create new company
@@ -255,10 +262,10 @@ export default function ProfilePage() {
         name: formData.get("name") as string,
         description: formData.get("description") as string,
         websiteUrl: formData.get("websiteUrl") as string,
-        logoUrl: (formData.get("logoUrl") as string) || undefined,
-        videoUrl: (formData.get("videoUrl") as string) || undefined,
-        founderName: (formData.get("founderName") as string) || undefined,
-        founderBio: (formData.get("founderBio") as string) || undefined,
+        logoUrl: getValue("logoUrl"),
+        videoUrl: getValue("videoUrl"),
+        founderName: getValue("founderName"),
+        founderBio: getValue("founderBio"),
       });
     }
   };
@@ -280,7 +287,7 @@ export default function ProfilePage() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
+      <div className="container mx-auto px-4">
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-2">
@@ -291,43 +298,90 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="mb-8 flex gap-4 border-b border-white/10">
-          <button
-            onClick={() => setActiveTab("company")}
-            className={`px-6 py-3 font-semibold transition-colors ${
-              activeTab === "company"
-                ? "text-purple-400 border-b-2 border-purple-400"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            Company Info
-          </button>
-          <button
-            onClick={() => setActiveTab("posts")}
-            className={`px-6 py-3 font-semibold transition-colors ${
-              activeTab === "posts"
-                ? "text-purple-400 border-b-2 border-purple-400"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            Posts
-          </button>
-          <button
-            onClick={() => setActiveTab("creators")}
-            className={`px-6 py-3 font-semibold transition-colors ${
-              activeTab === "creators"
-                ? "text-purple-400 border-b-2 border-purple-400"
-                : "text-gray-400 hover:text-white"
-            }`}
-          >
-            Creators
-          </button>
-        </div>
+        {/* Main Content with Sidebar */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Left Sidebar Navigation */}
+          <div className="lg:w-64 flex-shrink-0">
+            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-4 border border-white/10">
+              <nav className="space-y-2">
+                <button
+                  onClick={() => setActiveTab("company")}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-all flex items-center gap-3 ${
+                    activeTab === "company"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                    />
+                  </svg>
+                  Company Info
+                </button>
+                <button
+                  onClick={() => setActiveTab("posts")}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-all flex items-center gap-3 ${
+                    activeTab === "posts"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  Posts
+                </button>
+                <button
+                  onClick={() => setActiveTab("creators")}
+                  className={`w-full text-left px-4 py-3 rounded-lg font-semibold transition-all flex items-center gap-3 ${
+                    activeTab === "creators"
+                      ? "bg-purple-600 text-white"
+                      : "text-gray-300 hover:bg-white/10 hover:text-white"
+                  }`}
+                >
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    />
+                  </svg>
+                  Creators
+                </button>
+              </nav>
+            </div>
+          </div>
 
-        {/* Company Tab */}
-        {activeTab === "company" && (
-          <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+          {/* Right Content Area */}
+          <div className="flex-1 min-w-0">
+            {/* Company Tab */}
+            {activeTab === "company" && (
+              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
             <h2 className="text-2xl font-bold text-white mb-6">Company Information</h2>
             
             <form onSubmit={handleCompanySubmit} className="space-y-6">
@@ -438,267 +492,269 @@ export default function ProfilePage() {
                     : "Save Company"}
               </button>
             </form>
-          </div>
-        )}
-
-        {/* Posts Tab */}
-        {activeTab === "posts" && (
-          <div className="space-y-6">
-            {!company && (
-              <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-4 text-yellow-200">
-                Please create company information first before posting!
               </div>
             )}
 
-            <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-              <div className="flex justify-between items-center mb-6">
-                <h2 className="text-2xl font-bold text-white">Your Posts</h2>
-                {company && (
-                  <button
-                    onClick={() => setIsCreatingPost(true)}
-                    className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold"
-                  >
-                    + Create Post
-                  </button>
+            {/* Posts Tab */}
+            {activeTab === "posts" && (
+              <div className="space-y-6">
+                {!company && (
+                  <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-4 text-yellow-200">
+                    Please create company information first before posting!
+                  </div>
                 )}
-              </div>
 
-              {/* Create Post Form */}
-              {isCreatingPost && (
-                <div className="mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
-                  <h3 className="text-xl font-bold text-white mb-4">Create New Post</h3>
-                  <form onSubmit={handlePostSubmit} className="space-y-4">
-                    <div>
-                      <label className="block text-white font-semibold mb-2">
-                        Title <span className="text-red-400">*</span>
-                      </label>
-                      <input
-                        name="title"
-                        required
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="Post title"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-white font-semibold mb-2">
-                        Description (optional)
-                      </label>
-                      <textarea
-                        name="description"
-                        rows={4}
-                        className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                        placeholder="Post description..."
-                      />
-                    </div>
-                    <div className="flex gap-4">
+                <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                  <div className="flex justify-between items-center mb-6">
+                    <h2 className="text-2xl font-bold text-white">Your Posts</h2>
+                    {company && (
                       <button
-                        type="submit"
-                        disabled={createPost.isPending}
-                        className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+                        onClick={() => setIsCreatingPost(true)}
+                        className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold"
                       >
-                        {createPost.isPending ? "Creating..." : "Create Post"}
+                        + Create Post
                       </button>
-                      <button
-                        type="button"
-                        onClick={() => setIsCreatingPost(false)}
-                        className="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 border border-white/20 transition-all font-semibold"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
+                    )}
+                  </div>
 
-              {/* Posts List */}
-              <div className="space-y-4">
-                {posts && posts.length > 0 ? (
-                  posts.map((post) => (
-                    <div
-                      key={post.id}
-                      className="p-6 bg-white/5 rounded-lg border border-white/10 hover:border-purple-500/50 transition-all"
-                    >
-                      <h3 className="text-xl font-bold text-white mb-2">{post.title}</h3>
-                      {post.description && (
-                        <p className="text-gray-300 mb-4">{post.description}</p>
-                      )}
-                      <p className="text-sm text-gray-400">
-                        Created: {new Date(post.createdAt).toLocaleDateString()}
-                      </p>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-gray-400 text-center py-8">
-                    No posts yet. Create your first post!
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Creators Tab */}
-        {activeTab === "creators" && (
-          <div className="space-y-6">
-            {!selectedCreator ? (
-              // Creators List View
-              <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-                <h2 className="text-2xl font-bold text-white mb-6">Browse Creators</h2>
-                <p className="text-gray-300 mb-8">
-                  Explore creators and their demo content for your company
-                </p>
-
-                {/* Creators Grid */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {fakeCreators.map((creator) => (
-                    <div
-                      key={creator.id}
-                      className="p-6 rounded-xl border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
-                      onClick={() => setSelectedCreator(creator.id)}
-                    >
-                      {/* Avatar */}
-                      <div className="flex justify-center mb-4">
-                        <img
-                          src={creator.photoUrl}
-                          alt={creator.name}
-                          className="w-24 h-24 rounded-full border-4 border-white/20"
-                        />
-                      </div>
-
-                      {/* Info */}
-                      <h3 className="text-xl font-bold text-white text-center mb-2">
-                        {creator.name}
-                      </h3>
-                      <p className="text-sm text-purple-400 text-center mb-3">
-                        {creator.platform} • {creator.followers} followers
-                      </p>
-                      <p className="text-gray-300 text-sm text-center line-clamp-3">
-                        {creator.bio}
-                      </p>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              // Creator Detail View
-              (() => {
-                const creator = fakeCreators.find((c) => c.id === selectedCreator);
-                if (!creator) return null;
-
-                return (
-                  <div className="flex flex-col lg:flex-row gap-6">
-                    {/* Creator Info Panel */}
-                    <div className="lg:w-1/3 bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-                      <button
-                        onClick={() => setSelectedCreator(null)}
-                        className="text-purple-400 hover:text-purple-300 mb-6 flex items-center gap-2"
-                      >
-                        <svg
-                          className="w-5 h-5"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                  {/* Create Post Form */}
+                  {isCreatingPost && (
+                    <div className="mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
+                      <h3 className="text-xl font-bold text-white mb-4">Create New Post</h3>
+                      <form onSubmit={handlePostSubmit} className="space-y-4">
+                        <div>
+                          <label className="block text-white font-semibold mb-2">
+                            Title <span className="text-red-400">*</span>
+                          </label>
+                          <input
+                            name="title"
+                            required
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            placeholder="Post title"
                           />
-                        </svg>
-                        Back to Creators
-                      </button>
-
-                      {/* Avatar */}
-                      <div className="flex justify-center mb-6">
-                        <img
-                          src={creator.photoUrl}
-                          alt={creator.name}
-                          className="w-32 h-32 rounded-full border-4 border-purple-500"
-                        />
-                      </div>
-
-                      {/* Info */}
-                      <h2 className="text-2xl font-bold text-white text-center mb-3">
-                        {creator.name}
-                      </h2>
-                      <p className="text-sm text-purple-400 text-center mb-4">
-                        {creator.platform} • {creator.followers} followers
-                      </p>
-                      <p className="text-gray-300 text-sm text-center leading-relaxed">
-                        {creator.bio}
-                      </p>
-                    </div>
-
-                    {/* Demo Content Panel */}
-                    <div className="lg:w-2/3 bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-                      <h2 className="text-2xl font-bold text-white mb-6">Demo Content</h2>
-                      <p className="text-gray-300 mb-8">
-                        Sample videos and content this creator could produce for your company
-                      </p>
-
-                      {/* Demo Grid */}
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {creator.demos.map((demo) => (
-                          <div
-                            key={demo.id}
-                            className="rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
+                        </div>
+                        <div>
+                          <label className="block text-white font-semibold mb-2">
+                            Description (optional)
+                          </label>
+                          <textarea
+                            name="description"
+                            rows={4}
+                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                            placeholder="Post description..."
+                          />
+                        </div>
+                        <div className="flex gap-4">
+                          <button
+                            type="submit"
+                            disabled={createPost.isPending}
+                            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            <div className="relative">
-                              {/* Thumbnail/Image */}
-                              <img
-                                src={demo.thumbnail}
-                                alt={demo.title}
-                                className="w-full h-auto"
-                              />
-                              {/* Video/Image Badge */}
-                              <div className="absolute top-4 right-4">
-                                {demo.type === "video" ? (
-                                  <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="currentColor"
-                                      viewBox="0 0 20 20"
-                                    >
-                                      <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
-                                    </svg>
-                                    Video
-                                  </div>
-                                ) : (
-                                  <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
-                                    <svg
-                                      className="w-4 h-4"
-                                      fill="none"
-                                      stroke="currentColor"
-                                      viewBox="0 0 24 24"
-                                    >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                                      />
-                                    </svg>
-                                    Image
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="p-4">
-                              <h3 className="text-lg font-semibold text-white">
-                                {demo.title}
-                              </h3>
-                            </div>
+                            {createPost.isPending ? "Creating..." : "Create Post"}
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setIsCreatingPost(false)}
+                            className="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 border border-white/20 transition-all font-semibold"
+                          >
+                            Cancel
+                          </button>
+                        </div>
+                      </form>
+                    </div>
+                  )}
+
+                  {/* Posts List */}
+                  <div className="space-y-4">
+                    {posts && posts.length > 0 ? (
+                      posts.map((post) => (
+                        <div
+                          key={post.id}
+                          className="p-6 bg-white/5 rounded-lg border border-white/10 hover:border-purple-500/50 transition-all"
+                        >
+                          <h3 className="text-xl font-bold text-white mb-2">{post.title}</h3>
+                          {post.description && (
+                            <p className="text-gray-300 mb-4">{post.description}</p>
+                          )}
+                          <p className="text-sm text-gray-400">
+                            Created: {new Date(post.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <p className="text-gray-400 text-center py-8">
+                        No posts yet. Create your first post!
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Creators Tab */}
+            {activeTab === "creators" && (
+              <div className="space-y-6">
+                {!selectedCreator ? (
+                  // Creators List View
+                  <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                    <h2 className="text-2xl font-bold text-white mb-6">Browse Creators</h2>
+                    <p className="text-gray-300 mb-8">
+                      Explore creators and their demo content for your company
+                    </p>
+
+                    {/* Creators Grid */}
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {fakeCreators.map((creator) => (
+                        <div
+                          key={creator.id}
+                          className="p-6 rounded-xl border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
+                          onClick={() => setSelectedCreator(creator.id)}
+                        >
+                          {/* Avatar */}
+                          <div className="flex justify-center mb-4">
+                            <img
+                              src={creator.photoUrl}
+                              alt={creator.name}
+                              className="w-24 h-24 rounded-full border-4 border-white/20"
+                            />
                           </div>
-                        ))}
-                      </div>
+
+                          {/* Info */}
+                          <h3 className="text-xl font-bold text-white text-center mb-2">
+                            {creator.name}
+                          </h3>
+                          <p className="text-sm text-purple-400 text-center mb-3">
+                            {creator.platform} • {creator.followers} followers
+                          </p>
+                          <p className="text-gray-300 text-sm text-center line-clamp-3">
+                            {creator.bio}
+                          </p>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                );
-              })()
+                ) : (
+                  // Creator Detail View
+                  (() => {
+                    const creator = fakeCreators.find((c) => c.id === selectedCreator);
+                    if (!creator) return null;
+
+                    return (
+                      <div className="flex flex-col lg:flex-row gap-6">
+                        {/* Creator Info Panel */}
+                        <div className="lg:w-1/3 bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                          <button
+                            onClick={() => setSelectedCreator(null)}
+                            className="text-purple-400 hover:text-purple-300 mb-6 flex items-center gap-2"
+                          >
+                            <svg
+                              className="w-5 h-5"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M10 19l-7-7m0 0l7-7m-7 7h18"
+                              />
+                            </svg>
+                            Back to Creators
+                          </button>
+
+                          {/* Avatar */}
+                          <div className="flex justify-center mb-6">
+                            <img
+                              src={creator.photoUrl}
+                              alt={creator.name}
+                              className="w-32 h-32 rounded-full border-4 border-purple-500"
+                            />
+                          </div>
+
+                          {/* Info */}
+                          <h2 className="text-2xl font-bold text-white text-center mb-3">
+                            {creator.name}
+                          </h2>
+                          <p className="text-sm text-purple-400 text-center mb-4">
+                            {creator.platform} • {creator.followers} followers
+                          </p>
+                          <p className="text-gray-300 text-sm text-center leading-relaxed">
+                            {creator.bio}
+                          </p>
+                        </div>
+
+                        {/* Demo Content Panel */}
+                        <div className="lg:w-2/3 bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
+                          <h2 className="text-2xl font-bold text-white mb-6">Demo Content</h2>
+                          <p className="text-gray-300 mb-8">
+                            Sample videos and content this creator could produce for your company
+                          </p>
+
+                          {/* Demo Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            {creator.demos.map((demo) => (
+                              <div
+                                key={demo.id}
+                                className="rounded-xl overflow-hidden border border-white/10 bg-white/5 hover:border-purple-500/50 transition-all cursor-pointer"
+                              >
+                                <div className="relative">
+                                  {/* Thumbnail/Image */}
+                                  <img
+                                    src={demo.thumbnail}
+                                    alt={demo.title}
+                                    className="w-full h-auto"
+                                  />
+                                  {/* Video/Image Badge */}
+                                  <div className="absolute top-4 right-4">
+                                    {demo.type === "video" ? (
+                                      <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="currentColor"
+                                          viewBox="0 0 20 20"
+                                        >
+                                          <path d="M6.3 2.841A1.5 1.5 0 004 4.11V15.89a1.5 1.5 0 002.3 1.269l9.344-5.89a1.5 1.5 0 000-2.538L6.3 2.84z" />
+                                        </svg>
+                                        Video
+                                      </div>
+                                    ) : (
+                                      <div className="bg-blue-500 text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                                        <svg
+                                          className="w-4 h-4"
+                                          fill="none"
+                                          stroke="currentColor"
+                                          viewBox="0 0 24 24"
+                                        >
+                                          <path
+                                            strokeLinecap="round"
+                                            strokeLinejoin="round"
+                                            strokeWidth={2}
+                                            d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
+                                          />
+                                        </svg>
+                                        Image
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                                <div className="p-4">
+                                  <h3 className="text-lg font-semibold text-white">
+                                    {demo.title}
+                                  </h3>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()
+                )}
+              </div>
             )}
           </div>
-        )}
+        </div>
       </div>
     </main>
   );
