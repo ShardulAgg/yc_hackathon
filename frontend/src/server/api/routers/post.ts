@@ -5,11 +5,25 @@ import { db } from "~/server/db";
 
 export const postRouter = createTRPCRouter({
   getByUserId: protectedProcedure.query(async ({ ctx }) => {
-    const posts = await db.post.findMany({
+    // Get user's company first
+    const company = await db.company.findUnique({
       where: { userId: ctx.userId },
+    });
+
+    if (!company) {
+      return [];
+    }
+
+    // Get only posts created by creators (posts with creatorId)
+    const posts = await db.post.findMany({
+      where: { 
+        companyId: company.id,
+        creatorId: { not: null }, // Only posts created by creators
+      },
       include: {
         images: true,
         videos: true,
+        creator: true, // Include creator information
       },
       orderBy: { createdAt: "desc" },
     });

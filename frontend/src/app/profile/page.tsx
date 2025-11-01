@@ -183,7 +183,6 @@ const fakeCreators = [
 export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("company");
-  const [isCreatingPost, setIsCreatingPost] = useState(false);
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
 
   const utils = api.useUtils();
@@ -211,17 +210,6 @@ export default function ProfilePage() {
     onSuccess: () => {
       void utils.company.getByUserId.invalidate();
       alert("Company information updated!");
-    },
-    onError: (error) => {
-      alert(`Error: ${error.message}`);
-    },
-  });
-
-  const createPost = api.post.create.useMutation({
-    onSuccess: () => {
-      void utils.post.getByUserId.invalidate();
-      setIsCreatingPost(false);
-      alert("Post created!");
     },
     onError: (error) => {
       alert(`Error: ${error.message}`);
@@ -270,20 +258,6 @@ export default function ProfilePage() {
     }
   };
 
-  const handlePostSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    
-    if (!company) {
-      alert("Please create company information first!");
-      return;
-    }
-
-    createPost.mutate({
-      title: formData.get("title") as string,
-      description: (formData.get("description") as string) || undefined,
-    });
-  };
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 py-12">
@@ -500,69 +474,17 @@ export default function ProfilePage() {
               <div className="space-y-6">
                 {!company && (
                   <div className="bg-yellow-500/20 border border-yellow-500 rounded-lg p-4 text-yellow-200">
-                    Please create company information first before posting!
+                    Please create company information first!
                   </div>
                 )}
 
                 <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-                  <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-2xl font-bold text-white">Your Posts</h2>
-                    {company && (
-                      <button
-                        onClick={() => setIsCreatingPost(true)}
-                        className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold"
-                      >
-                        + Create Post
-                      </button>
-                    )}
+                  <div className="mb-6">
+                    <h2 className="text-2xl font-bold text-white mb-2">Creator Posts</h2>
+                    <p className="text-gray-300 text-sm">
+                      Posts created by influencers promoting your company
+                    </p>
                   </div>
-
-                  {/* Create Post Form */}
-                  {isCreatingPost && (
-                    <div className="mb-8 p-6 bg-white/5 rounded-lg border border-white/10">
-                      <h3 className="text-xl font-bold text-white mb-4">Create New Post</h3>
-                      <form onSubmit={handlePostSubmit} className="space-y-4">
-                        <div>
-                          <label className="block text-white font-semibold mb-2">
-                            Title <span className="text-red-400">*</span>
-                          </label>
-                          <input
-                            name="title"
-                            required
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                            placeholder="Post title"
-                          />
-                        </div>
-                        <div>
-                          <label className="block text-white font-semibold mb-2">
-                            Description (optional)
-                          </label>
-                          <textarea
-                            name="description"
-                            rows={4}
-                            className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                            placeholder="Post description..."
-                          />
-                        </div>
-                        <div className="flex gap-4">
-                          <button
-                            type="submit"
-                            disabled={createPost.isPending}
-                            className="px-6 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            {createPost.isPending ? "Creating..." : "Create Post"}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setIsCreatingPost(false)}
-                            className="px-6 py-2 bg-white/10 text-white rounded-lg hover:bg-white/20 border border-white/20 transition-all font-semibold"
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </form>
-                    </div>
-                  )}
 
                   {/* Posts List */}
                   <div className="space-y-4">
@@ -572,19 +494,72 @@ export default function ProfilePage() {
                           key={post.id}
                           className="p-6 bg-white/5 rounded-lg border border-white/10 hover:border-purple-500/50 transition-all"
                         >
+                          {/* Creator Info */}
+                          {post.creator && (
+                            <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/10">
+                              <img
+                                src={post.creator.photoUrl}
+                                alt={post.creator.name}
+                                className="w-12 h-12 rounded-full border-2 border-purple-500"
+                              />
+                              <div className="flex-1">
+                                <p className="text-white font-semibold">{post.creator.name}</p>
+                                <p className="text-sm text-gray-400">
+                                  {post.creator.platform} • {post.creator.followers} followers
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Post Content */}
                           <h3 className="text-xl font-bold text-white mb-2">{post.title}</h3>
                           {post.description && (
                             <p className="text-gray-300 mb-4">{post.description}</p>
                           )}
+
+                          {/* Post Media */}
+                          {post.images && post.images.length > 0 && (
+                            <div className="grid grid-cols-2 gap-2 mb-4">
+                              {post.images.map((image) => (
+                                <img
+                                  key={image.id}
+                                  src={image.url}
+                                  alt="Post image"
+                                  className="w-full h-auto rounded-lg"
+                                />
+                              ))}
+                            </div>
+                          )}
+
+                          {post.videos && post.videos.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {post.videos.map((video) => (
+                                <div key={video.id} className="relative aspect-video rounded-lg overflow-hidden bg-black/20">
+                                  <iframe
+                                    src={video.url}
+                                    title="Post video"
+                                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                    allowFullScreen
+                                    className="w-full h-full"
+                                  />
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Post Meta */}
                           <p className="text-sm text-gray-400">
-                            Created: {new Date(post.createdAt).toLocaleDateString()}
+                            Posted: {new Date(post.createdAt).toLocaleDateString()}
                           </p>
                         </div>
                       ))
                     ) : (
-                      <p className="text-gray-400 text-center py-8">
-                        No posts yet. Create your first post!
-                      </p>
+                      <div className="text-center py-12">
+                        <p className="text-gray-400 mb-2">No creator posts yet</p>
+                        <p className="text-sm text-gray-500">
+                          Posts created by selected creators will appear here
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>

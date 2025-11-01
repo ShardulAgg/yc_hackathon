@@ -55,6 +55,7 @@ model Post {
   id          String        @id @default(cuid())
   userId      String
   companyId   String
+  creatorId   String?        // Optional: creator who created this post
   title       String
   description String?
   createdAt   DateTime      @default(now())
@@ -62,11 +63,13 @@ model Post {
   
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   company     Company       @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  creator     Creator?      @relation(fields: [creatorId], references: [id], onDelete: SetNull)
   images      PostImage[]
   videos      PostVideo[]
   
   @@index([userId])
   @@index([companyId])
+  @@index([creatorId])
 }
 
 model PostImage {
@@ -100,6 +103,8 @@ model Creator {
   followers   String   // e.g., "100K", "500K", "1M+"
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+  
+  posts       Post[]
   
   @@index([name])
 }
