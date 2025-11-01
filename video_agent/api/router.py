@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from typing import List
 import json
@@ -47,20 +48,17 @@ async def generate_video(request: GenerateRequest):
     if request.creator_id < 0 or request.creator_id >= len(creators):
         raise HTTPException(status_code=400, detail=f"Invalid creator_id. Must be between 0 and {len(creators)-1}")
 
-    # For now, return placeholder response
-    return {
-        "message": "Video generation initiated",
-        "status": "processing",
-        "input": {
-            "company_name": request.company_name,
-            "use_case": request.use_case,
-            "founder_name": request.founder_name,
-            "founder_role": request.founder_role,
-            "interesting_context": request.interesting_context,
-            "creator_id": request.creator_id
-        },
-        "video_url": "placeholder.mp4"
-    }
+    # Return demo.mp4 file
+    demo_path = Path(__file__).parent.parent / "demo.mp4"
+
+    if not demo_path.exists():
+        raise HTTPException(status_code=404, detail="Demo video file not found")
+
+    return FileResponse(
+        path=str(demo_path),
+        media_type="video/mp4",
+        filename="generated_video.mp4"
+    )
 
 
 @router.get("/creators", response_model=List[CreatorResponse])
