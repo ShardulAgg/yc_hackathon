@@ -9,6 +9,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from agents.pre_production import run_pre_production
 from agents.production import run_production
 from agents.post_production import run_post_production
+from upload_post import UploadPostClient
 
 router = APIRouter()
 
