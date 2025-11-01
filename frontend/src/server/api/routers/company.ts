@@ -53,20 +53,31 @@ export const companyRouter = createTRPCRouter({
           headers: {
             "Authorization": `Bearer ${env.PERPLEXITY_API_KEY}`,
             "Content-Type": "application/json",
+            "Accept": "application/json",
           },
           body: JSON.stringify({
-            model: "llama-3.1-sonar-small-128k-online",
+            model: "sonar",
             messages: [
               {
                 role: "user",
                 content: prompt,
               },
             ],
+            max_tokens: 200,
+            temperature: 0.7,
           }),
         });
 
         if (!response.ok) {
-          throw new Error(`Perplexity API error: ${response.statusText}`);
+          const errorText = await response.text();
+          let errorMessage = `Perplexity API error: ${response.statusText}`;
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error?.message || errorData.message || errorMessage;
+          } catch {
+            errorMessage = errorText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
 
         const data = (await response.json()) as {
@@ -113,20 +124,31 @@ export const companyRouter = createTRPCRouter({
           headers: {
             "Authorization": `Bearer ${env.PERPLEXITY_API_KEY}`,
             "Content-Type": "application/json",
+            "Accept": "application/json",
           },
           body: JSON.stringify({
-            model: "llama-3.1-sonar-small-128k-online",
+            model: "sonar",
             messages: [
               {
                 role: "user",
                 content: prompt,
               },
             ],
+            max_tokens: 200,
+            temperature: 0.7,
           }),
         });
 
         if (!response.ok) {
-          throw new Error(`Perplexity API error: ${response.statusText}`);
+          const errorText = await response.text();
+          let errorMessage = `Perplexity API error: ${response.statusText}`;
+          try {
+            const errorData = JSON.parse(errorText);
+            errorMessage = errorData.error?.message || errorData.message || errorMessage;
+          } catch {
+            errorMessage = errorText || errorMessage;
+          }
+          throw new Error(errorMessage);
         }
 
         const data = (await response.json()) as {
