@@ -18,6 +18,66 @@ const CREATOR_ID_MAP: Record<number, string> = {
   4: "5", // Emily Carter
 };
 
+// Creator data for seeding
+const CREATORS_DATA = [
+  {
+    id: "1",
+    name: "Samantha Hayes",
+    photoUrl: "/creator_media/samantha.jpg",
+    bio: "Tech journalist and startup enthusiast covering YC companies. Passionate about uncovering the stories behind innovative founders building the future.",
+    platform: "samanthahayes_yc",
+    followers: "125K",
+  },
+  {
+    id: "2",
+    name: "Grace Mitchell",
+    photoUrl: "/creator_media/grace.jpg",
+    bio: "AI researcher turned content creator exploring the intersection of technology and entrepreneurship. Love spotting early-stage startups solving real problems.",
+    platform: "Agent_grace_mail",
+    followers: "98K",
+  },
+  {
+    id: "3",
+    name: "Ava Reynolds",
+    photoUrl: "/creator_media/ava.jpg",
+    bio: "Silicon Valley reporter documenting the startup ecosystem. Always hunting for the next breakthrough idea and the brilliant minds behind them.",
+    platform: "ava_browser_brown",
+    followers: "210K",
+  },
+  {
+    id: "4",
+    name: "Madison Brooks",
+    photoUrl: "/creator_media/madison.jpg",
+    bio: "Venture capital analyst and startup interviewer. Fascinated by founders who are bold enough to tackle the world's toughest challenges.",
+    platform: "madison_ai_brooks",
+    followers: "156K",
+  },
+  {
+    id: "5",
+    name: "Emily Carter",
+    photoUrl: "/creator_media/emily.jpg",
+    bio: "Y Combinator community advocate and tech storyteller. On a mission to showcase founders who are building companies that matter.",
+    platform: "emily_combinator_yc",
+    followers: "187K",
+  },
+];
+
+// Helper function to ensure creator exists in database
+async function ensureCreatorExists(creatorId: string): Promise<void> {
+  const creator = CREATORS_DATA.find((c) => c.id === creatorId);
+  if (!creator) return;
+
+  const existingCreator = await db.creator.findUnique({
+    where: { id: creatorId },
+  });
+
+  if (!existingCreator) {
+    await db.creator.create({
+      data: creator,
+    });
+  }
+}
+
 export const videoRouter = createTRPCRouter({
   getCreators: publicProcedure.query(async () => {
     try {
@@ -85,6 +145,9 @@ export const videoRouter = createTRPCRouter({
             message: "Invalid creator_id",
           });
         }
+
+        // Ensure creator exists in database
+        await ensureCreatorExists(dbCreatorId);
 
         // Create a hash of the company information to detect changes
         const companyInfoHash = crypto
@@ -174,28 +237,71 @@ export const videoRouter = createTRPCRouter({
           });
         }
 
-        const result = (await response.json()) as {
+        // Check if response is a video file (FileResponse) or JSON
+        const contentType = response.headers.get("content-type") || "";
+        let videoUrlToStore: string;
+        let result: {
           message: string;
           status: string;
           input: Record<string, unknown>;
-          video_url: string;
+          video_url?: string;
           video_id?: string;
           error?: string;
         };
 
-        // Handle video_url - it might be a real MP4 URL or placeholder
-        // If it's a real MP4 URL (starts with http or /), use it directly
-        // If it's placeholder.mp4, still save it so it appears in the list
-        let videoUrlToStore = result.video_url;
-        
-        // Normalize the video URL for storage
-        if (result.video_url && result.video_url !== "placeholder.mp4") {
-          // If it's a relative path, make it absolute to the backend API
-          if (result.video_url.startsWith("/")) {
-            videoUrlToStore = `${VIDEO_AGENT_API_URL}${result.video_url}`;
+        if (contentType.startsWith("video/")) {
+          // Backend returned a video file (demo.mp4), convert to base64 data URL
+          const videoBuffer = Buffer.from(await response.arrayBuffer());
+          const base64Video = videoBuffer.toString("base64");
+          const dataUrl = `data:${contentType};base64,${base64Video}`;
+          videoUrlToStore = dataUrl;
+          
+          result = {
+            message: "Video generation completed",
+            status: "completed",
+            video_id: crypto.randomUUID(),
+            video_url: dataUrl,
+            input: {
+              company_name: input.company_name,
+              use_case: input.use_case,
+              founder_name: input.founder_name,
+              founder_role: input.founder_role,
+              interesting_context: input.interesting_context,
+              creator_id: input.creator_id,
+            },
+          };
+        } else {
+          // Backend returned JSON
+          result = (await response.json()) as {
+            message: string;
+            status: string;
+            input: Record<string, unknown>;
+            video_url?: string;
+            video_id?: string;
+            error?: string;
+          };
+
+          // Handle video_url - it might be a real MP4 URL or placeholder
+          // If it's a real MP4 URL (starts with http or /), use it directly
+          // If it's placeholder.mp4, still save it so it appears in the list
+          if (!result.video_url) {
+            throw new TRPCError({
+              code: "INTERNAL_SERVER_ERROR",
+              message: "No video URL returned from backend",
+            });
           }
-          // If it already starts with http, use it as is
-          // Otherwise assume it's a valid URL
+          
+          videoUrlToStore = result.video_url;
+          
+          // Normalize the video URL for storage
+          if (result.video_url && result.video_url !== "placeholder.mp4") {
+            // If it's a relative path, make it absolute to the backend API
+            if (result.video_url.startsWith("/")) {
+              videoUrlToStore = `${VIDEO_AGENT_API_URL}${result.video_url}`;
+            }
+            // If it already starts with http, use it as is
+            // Otherwise assume it's a valid URL
+          }
         }
 
         // Save video as Post - always save, even if it's a placeholder

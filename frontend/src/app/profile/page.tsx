@@ -158,6 +158,7 @@ export default function ProfilePage() {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<TabType>("company");
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
+  const [isGeneratingVideo, setIsGeneratingVideo] = useState(false);
 
   // Fetch creators from database
   const { data: dbCreators, isLoading: isLoadingCreators } = api.creator.getAll.useQuery();
@@ -230,6 +231,53 @@ export default function ProfilePage() {
       alert(`Error generating interesting fact: ${error.message}`);
     },
   });
+
+  const generateVideo = api.video.generateVideo.useMutation({
+    onSuccess: (data) => {
+      setIsGeneratingVideo(false);
+      void utils.video.getVideosByCreator.invalidate();
+      const cachedMsg = 'cached' in data && data.cached ? "(Used cached version)" : "";
+      alert(`Video generated successfully! ${cachedMsg}`);
+    },
+    onError: (error) => {
+      setIsGeneratingVideo(false);
+      alert(`Error generating video: ${error.message}`);
+    },
+  });
+
+  const handleGenerateVideo = () => {
+    if (!selectedCreator || !company) {
+      alert("Please select a creator and ensure you have company information saved!");
+      return;
+    }
+
+    // Convert creator DB ID to video agent ID (reverse mapping)
+    const CREATOR_ID_REVERSE_MAP: Record<string, number> = {
+      "1": 0, // Samantha Hayes
+      "2": 1, // Grace Mitchell
+      "3": 2, // Ava Reynolds
+      "4": 3, // Madison Brooks
+      "5": 4, // Emily Carter
+    };
+
+    const creatorAgentId = CREATOR_ID_REVERSE_MAP[selectedCreator];
+    
+    if (creatorAgentId === undefined) {
+      alert("Invalid creator selected!");
+      return;
+    }
+
+    setIsGeneratingVideo(true);
+    generateVideo.mutate({
+      company_id: company.id,
+      company_name: company.name,
+      use_case: company.useCase || company.description,
+      founder_name: company.founderName || "Founder",
+      founder_role: "Founder",
+      interesting_context: company.interestingFact || "",
+      creator_id: creatorAgentId,
+    });
+  };
 
   // Show loading state while checking authentication
   if (userLoading) {
@@ -818,6 +866,39 @@ export default function ProfilePage() {
                           <p className="text-gray-300 text-sm text-center leading-relaxed">
                             {creator.bio}
                           </p>
+
+                          {/* Generate Video Button */}
+                          {company && (
+                            <div className="mt-6">
+                              <button
+                                onClick={handleGenerateVideo}
+                                disabled={isGeneratingVideo}
+                                className={`w-full px-6 py-3 rounded-xl font-semibold transition-all ${
+                                  isGeneratingVideo
+                                    ? "bg-gray-600/50 text-gray-400 cursor-not-allowed"
+                                    : "bg-gradient-to-r from-purple-600 to-pink-600 text-white hover:from-purple-700 hover:to-pink-700 transform hover:-translate-y-1 shadow-lg hover:shadow-xl"
+                                }`}
+                              >
+                                {isGeneratingVideo ? (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                    </svg>
+                                    Generating Video...
+                                  </span>
+                                ) : (
+                                  <span className="flex items-center justify-center gap-2">
+                                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    Generate Video
+                                  </span>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
 
                         {/* Generated Videos Panel */}
