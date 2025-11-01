@@ -10,12 +10,10 @@ export default function LoginPage() {
   const router = useRouter();
   const utils = api.useUtils();
   const { data: user } = api.auth.me.useQuery();
-  
-  // Redirect if already logged in
-  if (user) {
-    router.replace("/profile");
-    return null;
-  }
+  const [formData, setFormData] = useState({
+    email: "",
+    password: "",
+  });
   
   const login = api.auth.login.useMutation({
     onSuccess: async (data) => {
@@ -32,11 +30,12 @@ export default function LoginPage() {
       alert(`Login failed: ${error.message}`);
     },
   });
-
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+  
+  // Redirect if already logged in
+  if (user) {
+    router.replace("/profile");
+    return null;
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
