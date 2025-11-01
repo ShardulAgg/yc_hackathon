@@ -81,6 +81,18 @@ export default function CompanyDetailPage() {
                   </p>
                 </div>
               )}
+
+              {/* Interesting Fact */}
+              {company.interestingFact && (
+                <div className="mt-4 p-4 bg-gradient-to-r from-purple-500/10 to-pink-500/10 rounded-lg border border-purple-500/20">
+                  <p className="text-sm text-purple-400 font-semibold mb-2 flex items-center gap-2">
+                    <span>✨</span> Interesting Fact
+                  </p>
+                  <p className="text-gray-300 leading-relaxed">
+                    {company.interestingFact}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Founder Section */}

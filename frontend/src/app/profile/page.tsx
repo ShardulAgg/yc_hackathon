@@ -234,6 +234,22 @@ export default function ProfilePage() {
     },
   });
 
+  const generateInterestingFact = api.company.generateInterestingFact.useMutation({
+    onSuccess: (data) => {
+      // Set the generated interesting fact in the textarea
+      const interestingFactTextarea = document.querySelector(
+        'textarea[name="interestingFact"]',
+      );
+      if (interestingFactTextarea instanceof HTMLTextAreaElement) {
+        interestingFactTextarea.value = data.interestingFact;
+        interestingFactTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    },
+    onError: (error) => {
+      alert(`Error generating interesting fact: ${error.message}`);
+    },
+  });
+
   // Show loading state while checking authentication
   if (userLoading) {
     return (
@@ -273,6 +289,7 @@ export default function ProfilePage() {
         description: formData.get("description") as string,
         websiteUrl: formData.get("websiteUrl") as string,
         useCase: useCase.trim(),
+        interestingFact: getValue("interestingFact"),
         videoUrl: getValue("videoUrl"),
         founderName: getValue("founderName"),
         founderBio: getValue("founderBio"),
@@ -284,6 +301,7 @@ export default function ProfilePage() {
         description: formData.get("description") as string,
         websiteUrl: formData.get("websiteUrl") as string,
         useCase: useCase.trim(),
+        interestingFact: getValue("interestingFact"),
         videoUrl: getValue("videoUrl"),
         founderName: getValue("founderName"),
         founderBio: getValue("founderBio"),
@@ -471,6 +489,63 @@ export default function ProfilePage() {
                   className="mt-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                 >
                   {generateUseCase.isPending ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Auto Generate with AI
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-white font-semibold mb-2">
+                  Interesting Fact (optional)
+                </label>
+                <textarea
+                  name="interestingFact"
+                  rows={3}
+                  defaultValue={company?.interestingFact ?? ""}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  placeholder="Share an interesting, unique, or surprising fact about your company (e.g., origin story, unique approach, notable achievement, innovative feature)"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const form = document.querySelector('form');
+                    if (!form) return;
+                    
+                    const formData = new FormData(form);
+                    const websiteUrl = formData.get("websiteUrl") as string;
+                    const companyName = formData.get("name") as string;
+                    const description = formData.get("description") as string;
+                    const useCase = formData.get("useCase") as string;
+                    
+                    if (!websiteUrl || websiteUrl.trim() === "") {
+                      alert("Please enter a website URL first!");
+                      return;
+                    }
+                    
+                    generateInterestingFact.mutate({
+                      websiteUrl: websiteUrl.trim(),
+                      companyName: companyName ? companyName.trim() : undefined,
+                      description: description ? description.trim() : undefined,
+                      useCase: useCase ? useCase.trim() : undefined,
+                    });
+                  }}
+                  disabled={generateInterestingFact.isPending}
+                  className="mt-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white text-sm font-semibold rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {generateInterestingFact.isPending ? (
                     <>
                       <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
