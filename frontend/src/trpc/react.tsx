@@ -52,10 +52,11 @@ export function TRPCReactProvider(props: { children: React.ReactNode }) {
         httpBatchStreamLink({
           transformer: SuperJSON,
           url: getBaseUrl() + "/api/trpc",
-          headers: () => {
+          headers: async () => {
             const headers = new Headers();
             headers.set("x-trpc-source", "nextjs-react");
             if (typeof window !== "undefined") {
+              // Always read the latest sessionId from localStorage on each request
               const sessionId = localStorage.getItem("sessionId");
               if (sessionId) {
                 headers.set("authorization", `Bearer ${sessionId}`);

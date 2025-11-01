@@ -188,7 +188,7 @@ export default function ProfilePage() {
   const [selectedCreator, setSelectedCreator] = useState<string | null>(null);
 
   const utils = api.useUtils();
-  const { data: user } = api.auth.me.useQuery();
+  const { data: user, isLoading: userLoading } = api.auth.me.useQuery();
   const { data: company } = api.company.getByUserId.useQuery(
     undefined,
     { enabled: !!user }
@@ -233,6 +233,15 @@ export default function ProfilePage() {
       alert(`Error generating use case: ${error.message}`);
     },
   });
+
+  // Show loading state while checking authentication
+  if (userLoading) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-900 via-purple-900 to-slate-900 flex items-center justify-center">
+        <div className="text-white text-xl">Loading...</div>
+      </main>
+    );
+  }
 
   // Redirect if not logged in
   if (!user) {

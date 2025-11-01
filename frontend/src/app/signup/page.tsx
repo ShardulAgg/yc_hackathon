@@ -8,13 +8,20 @@ import { api } from "~/trpc/react";
 
 export default function SignupPage() {
   const router = useRouter();
+  const utils = api.useUtils();
+  
   const signup = api.auth.signup.useMutation({
     onSuccess: (data) => {
       // Store session ID
       if (typeof window !== "undefined") {
         localStorage.setItem("sessionId", data.sessionId);
+        // Invalidate and refetch auth queries to pick up new session
+        void utils.auth.me.invalidate();
+        // Small delay to ensure session is stored before navigation
+        setTimeout(() => {
+          router.push("/profile");
+        }, 100);
       }
-      router.push("/profile");
     },
     onError: (error) => {
       alert(`Signup failed: ${error.message}`);
