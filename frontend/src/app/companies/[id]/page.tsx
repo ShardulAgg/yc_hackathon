@@ -63,21 +63,24 @@ export default function CompanyDetailPage() {
 
           {/* Company Card */}
           <div className="bg-white/5 backdrop-blur-md rounded-2xl p-8 border border-white/10">
-            {/* Logo and Title */}
-            <div className="flex items-start gap-6 mb-8">
-              {company.logoUrl && (
-                <img
-                  src={company.logoUrl}
-                  alt={company.name}
-                  className="w-24 h-24 rounded-xl object-contain bg-white/5 p-3"
-                />
+            {/* Title */}
+            <div className="mb-8">
+              <h1 className="text-4xl font-extrabold text-white mb-2">
+                {company.name}
+              </h1>
+              <p className="text-xl text-gray-300 mb-4">{company.description}</p>
+              
+              {/* Use Case */}
+              {company.useCase && (
+                <div className="mt-4 p-4 bg-white/5 rounded-lg border border-white/10">
+                  <p className="text-sm text-purple-400 font-semibold mb-2">
+                    Use Case
+                  </p>
+                  <p className="text-gray-300 leading-relaxed">
+                    {company.useCase}
+                  </p>
+                </div>
               )}
-              <div className="flex-1">
-                <h1 className="text-4xl font-extrabold text-white mb-2">
-                  {company.name}
-                </h1>
-                <p className="text-xl text-gray-300">{company.description}</p>
-              </div>
             </div>
 
             {/* Founder Section */}

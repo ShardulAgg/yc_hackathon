@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -40,10 +40,11 @@ model Company {
   name        String
   description String
   websiteUrl  String
-  logoUrl     String?
-  videoUrl    String?
-  founderName String?
-  founderBio  String?
+  useCase         String   // Required: primary use case or industry application
+  interestingFact String?  // Optional: interesting fact about the company
+  videoUrl        String?
+  founderName     String?
+  founderBio      String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   

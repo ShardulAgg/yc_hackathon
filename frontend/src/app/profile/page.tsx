@@ -216,6 +216,22 @@ export default function ProfilePage() {
     },
   });
 
+  const generateUseCase = api.company.generateUseCase.useMutation({
+    onSuccess: (data) => {
+      // Set the generated use case in the textarea
+      const useCaseTextarea = document.querySelector(
+        'textarea[name="useCase"]',
+      ) as HTMLTextAreaElement;
+      if (useCaseTextarea) {
+        useCaseTextarea.value = data.useCase;
+        useCaseTextarea.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    },
+    onError: (error) => {
+      alert(`Error generating use case: ${error.message}`);
+    },
+  });
+
   // Redirect if not logged in
   if (!user) {
     router.push("/login");
@@ -232,6 +248,12 @@ export default function ProfilePage() {
       return value && value.trim() !== "" ? value.trim() : undefined;
     };
     
+    const useCase = formData.get("useCase") as string;
+    if (!useCase || useCase.trim() === "") {
+      alert("Use Case is required!");
+      return;
+    }
+
     if (company) {
       // Update existing company
       updateCompany.mutate({
@@ -239,7 +261,7 @@ export default function ProfilePage() {
         name: formData.get("name") as string,
         description: formData.get("description") as string,
         websiteUrl: formData.get("websiteUrl") as string,
-        logoUrl: getValue("logoUrl"),
+        useCase: useCase.trim(),
         videoUrl: getValue("videoUrl"),
         founderName: getValue("founderName"),
         founderBio: getValue("founderBio"),
@@ -250,7 +272,7 @@ export default function ProfilePage() {
         name: formData.get("name") as string,
         description: formData.get("description") as string,
         websiteUrl: formData.get("websiteUrl") as string,
-        logoUrl: getValue("logoUrl"),
+        useCase: useCase.trim(),
         videoUrl: getValue("videoUrl"),
         founderName: getValue("founderName"),
         founderBio: getValue("founderBio"),
@@ -402,15 +424,58 @@ export default function ProfilePage() {
 
               <div>
                 <label className="block text-white font-semibold mb-2">
-                  Logo URL (optional)
+                  Use Case <span className="text-red-400">*</span>
                 </label>
-                <input
-                  name="logoUrl"
-                  type="url"
-                  defaultValue={company?.logoUrl ?? ""}
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500"
-                  placeholder="https://yourcompany.com/logo.png"
+                <textarea
+                  name="useCase"
+                  required
+                  rows={3}
+                  defaultValue={company?.useCase ?? ""}
+                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
+                  placeholder="Describe the primary use case or industry application (e.g., 'SaaS for e-commerce businesses', 'CRM for real estate agents', 'Analytics tool for marketing teams')"
                 />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const form = document.querySelector('form');
+                    if (!form) return;
+                    
+                    const formData = new FormData(form);
+                    const websiteUrl = formData.get("websiteUrl") as string;
+                    const companyName = formData.get("name") as string;
+                    const description = formData.get("description") as string;
+                    
+                    if (!websiteUrl || websiteUrl.trim() === "") {
+                      alert("Please enter a website URL first!");
+                      return;
+                    }
+                    
+                    generateUseCase.mutate({
+                      websiteUrl: websiteUrl.trim(),
+                      companyName: companyName ? companyName.trim() : undefined,
+                      description: description ? description.trim() : undefined,
+                    });
+                  }}
+                  disabled={generateUseCase.isPending}
+                  className="mt-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-sm font-semibold rounded-lg hover:from-blue-700 hover:to-cyan-700 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                >
+                  {generateUseCase.isPending ? (
+                    <>
+                      <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                      Auto Generate with AI
+                    </>
+                  )}
+                </button>
               </div>
 
               <div>

@@ -13,7 +13,8 @@ export default function CompaniesPage() {
   const filteredCompanies = companies?.filter(
     (company) =>
       company.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      company.description.toLowerCase().includes(searchQuery.toLowerCase()),
+      company.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (company.useCase?.toLowerCase().includes(searchQuery.toLowerCase()) ?? false),
   );
 
   return (
@@ -70,17 +71,6 @@ export default function CompaniesPage() {
                 key={company.id}
                 className="bg-white/5 backdrop-blur-md rounded-2xl p-6 border border-white/10 hover:border-purple-500/50 transition-all hover:transform hover:-translate-y-2 group"
               >
-                {/* Logo */}
-                {company.logoUrl && (
-                  <div className="mb-4">
-                    <img
-                      src={company.logoUrl}
-                      alt={company.name}
-                      className="w-16 h-16 rounded-lg object-contain"
-                    />
-                  </div>
-                )}
-
                 {/* Company Info */}
                 <h2 className="text-2xl font-bold text-white mb-2 group-hover:text-purple-400 transition-colors">
                   {company.name}
@@ -88,6 +78,18 @@ export default function CompaniesPage() {
                 <p className="text-gray-300 mb-4 line-clamp-3">
                   {company.description}
                 </p>
+
+                {/* Use Case */}
+                {company.useCase && (
+                  <div className="mb-4">
+                    <p className="text-sm text-purple-400 font-semibold mb-1">
+                      Use Case
+                    </p>
+                    <p className="text-gray-300 text-sm line-clamp-2">
+                      {company.useCase}
+                    </p>
+                  </div>
+                )}
 
                 {/* Founder Info */}
                 {company.founderName && (
