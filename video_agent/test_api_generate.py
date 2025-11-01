@@ -31,7 +31,7 @@ try:
         print(f"Status: {result['status']}")
         print(f"Number of clips: {result['num_clips']}")
         print(f"Video path: {result['video_path']}")
-        print(f"Base64 length: {len(result['video_base64'])} characters")
+        print(f"Video URL: {result['video_url']}")
         print(f"\nScript ({len(result['script'])} lines):")
         for idx, line in enumerate(result['script']):
             print(f"  {idx + 1}. {line['speaker']}: {line['text'][:60]}...")

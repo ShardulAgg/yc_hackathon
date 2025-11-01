@@ -1,4 +1,0 @@
-file '/app/output/final/downloads/00_Samantha_Hayes.mp4'
-file '/app/output/final/downloads/01_Alex_Chen.mp4'
-file '/app/output/final/downloads/02_Samantha_Hayes.mp4'
-file '/app/output/final/downloads/03_Alex_Chen.mp4'

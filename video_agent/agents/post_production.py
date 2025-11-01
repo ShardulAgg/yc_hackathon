@@ -1,6 +1,7 @@
 import subprocess
 import base64
 import requests
+import os
 from pathlib import Path
 from typing import Dict, List
 
@@ -76,6 +77,38 @@ def video_to_base64(video_path: str) -> str:
     return base64_str
 
 
+def upload_to_wavespeed(video_path: str) -> str:
+    """
+    Upload video to Wavespeed and return the URL
+
+    Args:
+        video_path: Path to the video file
+
+    Returns:
+        URL of the uploaded video
+    """
+    print(f"\nUploading video to Wavespeed...")
+
+    api_key = os.getenv("WAVESPEED_API_KEY")
+    if not api_key:
+        raise Exception("WAVESPEED_API_KEY not found in environment variables")
+
+    url = "https://api.wavespeed.ai/api/v3/media/upload/binary"
+    headers = {
+        "Authorization": f"Bearer {api_key}"
+    }
+
+    with open(video_path, 'rb') as f:
+        files = {'file': f}
+        response = requests.post(url, headers=headers, files=files)
+
+    response.raise_for_status()
+    result = response.json()
+
+    print(f"  ✓ Uploaded to Wavespeed")
+    return result
+
+
 def run_post_production(production_output: Dict) -> Dict:
     """
     Main post-production function to download, stitch, and encode video
@@ -114,11 +147,11 @@ def run_post_production(production_output: Dict) -> Dict:
     final_video_path = output_dir / "final_stitched_video.mp4"
     stitched_path = stitch_videos_with_ffmpeg(downloaded_paths, final_video_path)
 
-    # Convert to base64
-    video_base64 = video_to_base64(stitched_path)
+    # Upload to Wavespeed
+    wavespeed_result = upload_to_wavespeed(stitched_path)
 
     return {
-        "video_base64": video_base64,
+        "video_url": wavespeed_result,
         "video_path": stitched_path,
         "num_clips": len(video_files),
         "script": production_output["script"],

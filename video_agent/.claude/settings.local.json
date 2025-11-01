@@ -2,7 +2,11 @@
   "permissions": {
     "allow": [
       "Bash(python:*)",
-      "Bash(docker exec:*)"
+      "Bash(docker exec:*)",
+      "Bash(docker logs:*)",
+      "WebSearch",
+      "WebFetch(domain:docs.upload-post.com)",
+      "Bash(xargs:*)"
     ],
     "deny": [],
     "ask": []

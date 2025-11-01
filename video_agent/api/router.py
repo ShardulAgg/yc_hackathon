@@ -4,6 +4,7 @@ from typing import List
 import json
 from pathlib import Path
 import sys
+import os
 sys.path.append(str(Path(__file__).parent.parent))
 
 from agents.pre_production import run_pre_production
@@ -25,7 +26,7 @@ class GenerateRequest(BaseModel):
 
 
 class UploadVideoRequest(BaseModel):
-    video_path: str
+    video_url: str
     title: str
     description: str
 
@@ -47,7 +48,8 @@ def load_creators():
 async def generate_video(request: GenerateRequest):
     """
     Generate a video from interviewee context and creator
-    Full pipeline: script generation → video generation → stitching → base64 encoding
+    Full pipeline: script generation → video generation → stitching → upload to Wavespeed
+    Returns a video URL instead of base64
     """
     try:
         # Validate creator_id
@@ -76,17 +78,52 @@ async def generate_video(request: GenerateRequest):
         print("="*60)
         production_result = run_production(pre_production_result)
 
-        # Step 3: Post-production (download, stitch, encode)
+        # Step 3: Post-production (download, stitch, upload to Wavespeed)
         post_production_result = run_post_production(production_result)
+
+        # Step 4: Upload to social platforms via UploadPost
+        print("\n" + "="*60)
+        print("STEP 4: UPLOAD TO SOCIAL PLATFORMS")
+        print("="*60)
+
+        upload_post_result = None
+        try:
+            # Use local video file path (Upload-Post doesn't accept video URLs)
+            local_video_path = post_production_result["video_path"]
+
+            # Get API key for UploadPost
+            upload_post_api_key = os.getenv("UPLOAD_POST_API_KEY")
+            if upload_post_api_key:
+                client = UploadPostClient(api_key=upload_post_api_key)
+
+                # Create title and description from context
+                title = f"Interview with {request.founder_name} from {request.company_name}"
+                description = f"{request.founder_name}, {request.founder_role} at {request.company_name}, discusses {request.use_case}"
+
+                upload_post_result = client.upload_video(
+                    video_path=local_video_path,
+                    title=title,
+                    user="test",
+                    platforms=["instagram"],
+                    description=description
+                )
+                print(f"✓ Uploaded to Instagram: {upload_post_result}")
+            else:
+                print("⚠️  UPLOAD_POST_API_KEY not found - skipping social platform upload")
+        except Exception as e:
+            print(f"⚠️  Error uploading to social platforms: {e}")
+            import traceback
+            traceback.print_exc()
 
         return {
             "status": "success",
-            "video_base64": post_production_result["video_base64"],
+            "video_url": post_production_result["video_url"],
             "video_path": post_production_result["video_path"],
             "num_clips": post_production_result["num_clips"],
             "script": post_production_result["script"],
             "creator": post_production_result["creator"],
-            "interviewee": post_production_result["interviewee"]
+            "interviewee": post_production_result["interviewee"],
+            "upload_post_result": upload_post_result
         }
 
     except Exception as e:
@@ -113,9 +150,16 @@ async def get_creators():
 
 @router.post("/upload-video")
 async def upload_video(request: UploadVideoRequest):
-    response = await push_content(
-        video_path=request.video_path,
+    api_key = os.getenv("UPLOAD_POST_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="UPLOAD_POST_API_KEY not configured")
+
+    client = UploadPostClient(api_key=api_key)
+    response = client.upload_video(
+        video_path=request.video_url,
         title=request.title,
+        user="test",
+        platforms=["instagram"],
         description=request.description
     )
     return response

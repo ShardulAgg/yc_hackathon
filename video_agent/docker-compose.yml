@@ -13,6 +13,8 @@ services:
     environment:
       - ENVIRONMENT=development
       - REPLICATE_API_TOKEN=${REPLICATE_API_TOKEN}
+      - WAVESPEED_API_KEY=${WAVESPEED_API_KEY}
+      - UPLOAD_POST_API_KEY=${UPLOAD_POST_API_KEY}
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
