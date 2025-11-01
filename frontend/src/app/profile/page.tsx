@@ -721,8 +721,16 @@ export default function ProfilePage() {
                           <h3 className="text-xl font-bold text-white text-center mb-2">
                             {creator.name}
                           </h3>
-                          <p className="text-sm text-purple-400 text-center mb-3">
-                            {creator.platform} • {creator.followers} followers
+                          <p className="text-sm text-purple-400 text-center mb-2">
+                            <a
+                              href={`https://instagram.com/${creator.platform}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-purple-300 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              @{creator.platform}
+                            </a> • {creator.followers} followers
                           </p>
                           <p className="text-gray-300 text-sm text-center line-clamp-3">
                             {creator.bio}
@@ -775,7 +783,14 @@ export default function ProfilePage() {
                             {creator.name}
                           </h2>
                           <p className="text-sm text-purple-400 text-center mb-4">
-                            {creator.platform} • {creator.followers} followers
+                            <a
+                              href={`https://instagram.com/${creator.platform}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="hover:text-purple-300 transition-colors"
+                            >
+                              @{creator.platform}
+                            </a> • {creator.followers} followers
                           </p>
                           <p className="text-gray-300 text-sm text-center leading-relaxed">
                             {creator.bio}
